@@ -1,16 +1,11 @@
-# medtech_maintenance
+# MedTech Maintenance
 
-A new Flutter project.
+MedTech Maintenance est une application Flutter multi‑plateforme (Android / iOS / web) conçue pour aider les équipes de maintenance biomédicale.
 
-## Getting Started
+Fonctionnalités principales :
+- Créer et gérer des interventions (équipement, technicien, description)
+- Suivi du statut des interventions (En Attente, En Cours, Terminée)
+- Ajouter et afficher des photos associées aux interventions
+- Enregistrer des notes et consulter les détails d'une intervention
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Le projet est prêt à être exécuté en local (voir `pubspec.yaml` pour les dépendances). Si tu veux, je peux aussi committer et pousser ce dépôt vers GitHub pour toi.
