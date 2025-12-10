@@ -1,41 +1,45 @@
 import 'package:flutter/material.dart';
-import 'signup_page.dart';
+import 'login_page.dart';
 import 'home_page.dart';
 import '../services/auth_service.dart'; // <-- AJOUTE CETTE LIGNE
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _SignUpPageState createState() => _SignUpPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignUpPageState extends State<SignUpPage> {
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String? _errorMessage;
 
   @override
-  void initState() {
-    super.initState();
-    // Pré-remplir pour le test
-    _emailController.text = 'technicien@hospital.com';
-    _passwordController.text = 'password123';
-  }
-
-  @override
   void dispose() {
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = 'Les mots de passe ne correspondent pas.';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -45,9 +49,10 @@ class _LoginPageState extends State<LoginPage> {
     // Simuler un délai réseau
     await Future.delayed(const Duration(seconds: 1));
 
-    final success = await AuthService.signIn(
+    final success = await AuthService.signUp(
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      fullName: _fullNameController.text.trim(),
     );
 
     if (success && mounted) {
@@ -58,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Email ou mot de passe incorrect';
+        _errorMessage = 'Cet email est déjà utilisé.';
       });
     }
   }
@@ -67,38 +72,36 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Créer un compte'),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo et titre
-              const SizedBox(height: 40),
-              Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.medical_services,
-                      size: 80,
-                      color: Colors.blue[700],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'MedTech Maintenance',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Connexion au compte technicien',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
+              // Titre
+              const SizedBox(height: 20),
+              Text(
+                'Rejoindre MedTech Maintenance',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
                 ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Créez votre compte technicien biomédical',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 40),
 
@@ -131,6 +134,25 @@ class _LoginPageState extends State<LoginPage> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    // Nom complet
+                    TextFormField(
+                      controller: _fullNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nom complet',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez entrer votre nom complet';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Email
                     TextFormField(
                       controller: _emailController,
@@ -179,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer votre mot de passe';
+                          return 'Veuillez entrer un mot de passe';
                         }
                         if (value.length < 6) {
                           return 'Minimum 6 caractères';
@@ -187,14 +209,47 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Bouton Connexion
+                    // Confirmation mot de passe
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Confirmer le mot de passe',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez confirmer votre mot de passe';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Bouton Inscription
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _signIn,
+                        onPressed: _isLoading ? null : _signUp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[700],
                           shape: RoundedRectangleBorder(
@@ -211,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               )
                             : const Text(
-                                'SE CONNECTER',
+                                'CRÉER MON COMPTE',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -224,24 +279,32 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 30),
 
-              // Lien vers inscription
+              // Conditions
+              Text(
+                'En créant un compte, vous acceptez nos conditions d\'utilisation et notre politique de confidentialité.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Lien vers connexion
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const SignUpPage(),
+                        builder: (context) => const LoginPage(),
                       ),
                     );
                   },
                   child: RichText(
                     text: TextSpan(
-                      text: 'Pas encore de compte ? ',
+                      text: 'Déjà un compte ? ',
                       style: const TextStyle(color: Colors.grey),
                       children: [
                         TextSpan(
-                          text: 'S\'inscrire',
+                          text: 'Se connecter',
                           style: TextStyle(
                             color: Colors.blue[700],
                             fontWeight: FontWeight.bold,
@@ -252,55 +315,37 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Comptes de test
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '📋 Comptes de test :',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '• technicien@hospital.com / password123',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    Text(
-                      '• admin@hospital.com / admin123',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    Text(
-                      '• test@test.com / test123',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
 
               // Texte informatif
+              const SizedBox(height: 30),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '⚠️ Version de démonstration - Les données sont stockées localement',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.medical_services,
+                      size: 40,
+                      color: Colors.blue[700],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Version démonstration',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Cette version utilise une authentification simulée. Pour une utilisation en production, intégrez Firebase.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                    ),
+                  ],
                 ),
               ),
             ],
